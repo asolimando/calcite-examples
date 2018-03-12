@@ -79,7 +79,7 @@ object DruidSpark extends Helper {
 
     val dw = spark.sqlContext.read.format("jdbc").options(
       Map(
-        "url" -> "jdbc:avatica:remote:url=http://localhost:8082/druid/v2/sql/avatica/",
+        "url" -> "jdbc:avatica:remote:url=http://127.0.0.1:8082/druid/v2/sql/avatica/",
         "dbtable" -> "wikiticker",
         "driver" -> "org.apache.calcite.avatica.remote.Driver",
         "fetchSize"->"10000"
