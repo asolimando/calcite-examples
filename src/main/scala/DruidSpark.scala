@@ -12,8 +12,9 @@ trait Helper {
 
   /**
     * Set the verbosity level for the Log4J logging engine
+    *
     * @param sparkSession the spark session
-    * @param level the verbosity level to be set
+    * @param level        the verbosity level to be set
     */
   def setLog4JVerbosity(sparkSession: SparkSession, level: String = "ERROR"): Unit = {
     sparkSession.sparkContext.setLogLevel(level)
@@ -23,24 +24,25 @@ trait Helper {
 
   /**
     * Create a spark session given in input the map of configuration values and the master info to be used.
-    * @param args the map of configuration values for the spark session
+    *
+    * @param args       the map of configuration values for the spark session
     * @param masterInfo the master info to be used
     * @return a spark context created using the given parameters
     */
-  def getSparkSession(args: Map[String,String] = HashMap(), masterInfo: String = "local[*]"): SparkSession = {
+  def getSparkSession(args: Map[String, String] = HashMap(), masterInfo: String = "local[*]"): SparkSession = {
     val conf = new SparkConf()
       .setMaster(masterInfo)
       .set("spark.sql.warehouse.dir",
-        args.getOrElse("spark.sql.warehouse.dir","sparkWarehouseLocalDir"))
+        args.getOrElse("spark.sql.warehouse.dir", "sparkWarehouseLocalDir"))
       .set("spark.local.dir",
-        args.getOrElse("spark.local.dir","sparkLocalDir"))
+        args.getOrElse("spark.local.dir", "sparkLocalDir"))
       .set("spark.sql.shuffle.partitions",
-        args.getOrElse("spark.sql.shuffle.partitions","4"))
+        args.getOrElse("spark.sql.shuffle.partitions", "4"))
       .set("spark.driver.memory",
-        args.getOrElse("spark.driver.memory","3g"))
+        args.getOrElse("spark.driver.memory", "3g"))
       .set("spark.executor.memory",
-        args.getOrElse("spark.executor.memory","3g"))
-      .setAppName(args.getOrElse("spark.app.name","MyApp"))
+        args.getOrElse("spark.executor.memory", "3g"))
+      .setAppName(args.getOrElse("spark.app.name", "MyApp"))
 
     val spark = SparkSession
       .builder()
@@ -82,7 +84,7 @@ object DruidSpark extends Helper {
         "url" -> "jdbc:avatica:remote:url=http://127.0.0.1:8082/druid/v2/sql/avatica/",
         "dbtable" -> "wikiticker",
         "driver" -> "org.apache.calcite.avatica.remote.Driver",
-        "fetchSize"->"10000"
+        "fetchSize" -> "10000"
       )
     ).load
 
