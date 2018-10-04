@@ -151,58 +151,72 @@ public class CalcitePostgres {
 			throws SQLException, ValidationException, RelConversionException, SqlParseException {
 
 		final String postgresURL = "jdbc:postgresql://localhost:5432/calcite";
-		final String sqliteURL = "jdbc:sqlite:resources/ex1";
+		final String sqliteURL = "jdbc:sqlite:src/main/resources/ex1";
 
 		populateDB(postgresURL, false);
-
+/*
 		final Properties info = new Properties();
 		info.setProperty("lex", "POSTGRES");
 		info.setProperty("defaultNullCollation", "LAST");
 		info.put(InternalProperty.CASE_SENSITIVE, true);
 		info.put(InternalProperty.UNQUOTED_CASING, Casing.TO_LOWER);
 		info.put(InternalProperty.QUOTED_CASING, Casing.UNCHANGED);
-
+*/
 		final Connection connection = DriverManager.getConnection("jdbc:calcite:");
 		final CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
 		final SchemaPlus rootSchema = calciteConnection.getRootSchema();
+		System.out.println(rootSchema.getName());
+
 		final DataSource ds = JdbcSchema.dataSource(postgresURL, "org.postgresql.Driver", "postgres", "postgres");
-		rootSchema.add("CALCITE", JdbcSchema.create(rootSchema, "CALCITE", ds, null, null));
+		rootSchema.add("POSTGRES", JdbcSchema.create(rootSchema, "POSTGRES", ds, null, null));
 
-		final Connection connection2 = DriverManager.getConnection("jdbc:sqlite:");
-		final CalciteConnection calciteConnection2 = connection.unwrap(CalciteConnection.class);
-		final SchemaPlus rootSchema2 = calciteConnection2.getRootSchema();
 		final DataSource ds2 = JdbcSchema.dataSource(sqliteURL, "org.sqlite.JDBC", "", "");
-		rootSchema2.add("CALCITE", JdbcSchema.create(rootSchema, "SQLLITE", ds2, null, null));
+		rootSchema.add("SQLITE", JdbcSchema.create(rootSchema, "SQLITE", ds2, null, null));
 
-		final String query2 = "select * from tbl1";
-		final Statement stmt3 = connection.createStatement();
-		final ResultSet rs3 = stmt3.executeQuery(query2);
-		while (rs3.next()) {
-			System.out.println(rs3.getString(0) + " = " + rs3.getInt(1));
-		}
-
-		final String query = "select calcite.\"table1\".\"id\", calcite.\"table1\".\"field1\", calcite.\"table2\".\"field1\" " +
-				"from calcite.\"table1\" join calcite.\"table2\" " +
-				"  on calcite.\"table1\".\"id\" = calcite.\"table2\".\"id1\"" +
-				"where calcite.\"table1\".\"id\" < 5";
-
-		final Statement stmt2 = connection.createStatement();
-		final ResultSet rs = stmt2.executeQuery(query);
-
-		while (rs.next()) {
-			rs.getMetaData();
-			System.out.println(rs.getString(1) + '=' + rs.getString(2));
+		final String sqliteQuery = "select * from sqlite.\"tbl1\"";
+		final Statement sqliteStmt = connection.createStatement();
+		final ResultSet sqliteRs = sqliteStmt.executeQuery(sqliteQuery);
+		while (sqliteRs.next()) {
+			System.out.println(sqliteRs.getString(1) + " = " + sqliteRs.getInt(2));
 		}
 
 		System.out.println();
 
-		plan(rootSchema, query);
+		plan(rootSchema, sqliteQuery);
 
-/*
-		SQLPlannedOperationStatement sqlPlannedOperationStatement = new SQLPlannedOperationStatement(
-				convertRelNode(plan.topNode, plan.originalRowType, returnValues)
-						.optimize());
-*/
+
+		final String postgresQuery = "select postgres.\"table1\".\"id\", postgres.\"table1\".\"field1\", postgres.\"table2\".\"field1\" " +
+				"from postgres.\"table1\" join postgres.\"table2\" " +
+				"  on postgres.\"table1\".\"id\" = postgres.\"table2\".\"id1\"" +
+				"where postgres.\"table1\".\"id\" < 5";
+
+		final Statement postgresStmt = connection.createStatement();
+		final ResultSet postgresRs = postgresStmt.executeQuery(postgresQuery);
+
+		while (postgresRs.next()) {
+			System.out.println(postgresRs.getString(1) + '=' + postgresRs.getString(2));
+		}
+
+		System.out.println();
+
+		plan(rootSchema, postgresQuery);
+
+		final String fedQuery = "select postgres.\"table1\".\"id\", postgres.\"table1\".\"field1\", postgres.\"table2\".\"field1\" " +
+				"from postgres.\"table1\" join postgres.\"table2\" " +
+				"  on ( postgres.\"table1\".\"id\" = postgres.\"table2\".\"id1\" ) " +
+				"  join sqlite.\"tbl1\" on ( postgres.\"table1\".\"id\" = sqlite.\"tbl1\".\"two\" ) " +
+				"where postgres.\"table1\".\"id\" < 5";
+
+		final Statement fedStmt = connection.createStatement();
+		final ResultSet fedRs = fedStmt.executeQuery(fedQuery);
+
+		while (fedRs.next()) {
+			System.out.println(fedRs.getString(1) + '=' + fedRs.getString(2));
+		}
+
+		System.out.println();
+
+		plan(rootSchema, fedQuery);
 	}
 
 	private static void plan(SchemaPlus rootSchema, String query)
